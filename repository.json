@@ -7,8 +7,8 @@
     "description": "Usa el título romaji de AniList y los metadatos de TMDb en español.",
     "category": "Metadata",
     "owner": "Linderkin",
+    "imageUrl": "https://raw.githubusercontent.com/Linderkin/jellyfin-plugin-anilist-tmdb-fusion/master/icon.png",
     "sourceUrl": "https://github.com/Linderkin/jellyfin-plugin-anilist-tmdb-fusion",
-    "archive": "https://github.com/Linderkin/jellyfin-plugin-anilist-tmdb-fusion/releases/download/v1.0.0/Jellyfin.Plugin.AnilistTMDbFusion.zip",
-    "imageUrl": "https://raw.githubusercontent.com/Linderkin/jellyfin-plugin-anilist-tmdb-fusion/master/icon.png"
+    "archive": "https://github.com/Linderkin/jellyfin-plugin-anilist-tmdb-fusion/releases/download/v1.0.0/Jellyfin.Plugin.AnilistTMDbFusion.zip"
   }
 ]
