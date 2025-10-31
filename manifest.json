@@ -1,10 +1,11 @@
+
 {
   "name": "AniList + TMDb Fusion",
   "guid": "8d7a3a6d-1b23-4c77-9b8a-a12d3f4e9e7d",
   "version": "1.0.0",
-  "targetAbi": "10.9.0.0",
+  "targetAbi": "10.11.0.0",
   "description": "Usa el título romaji de AniList y los metadatos de TMDb en español.",
-  "owner": "TuNombre",
+  "owner": "Linderkin",
   "category": "Metadata",
   "autoUpdate": true
 }

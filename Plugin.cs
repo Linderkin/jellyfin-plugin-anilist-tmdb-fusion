@@ -1,22 +1,34 @@
+using System;
 using System.Collections.Generic;
-using MediaBrowser.Common.Configuration;
-using MediaBrowser.Common.Plugins;
+using MediaBrowser.Controller.Plugins;
 using MediaBrowser.Model.Plugins;
-using MediaBrowser.Model.Serialization;
+using MediaBrowser.Common.Plugins;
+using Jellyfin.Plugin.AnilistTMDbFusion.Configuration;
 
 namespace Jellyfin.Plugin.AnilistTMDbFusion
 {
-    public class Plugin : BasePlugin<Configuration.PluginConfiguration>, IHasWebPages
+    public class Plugin : BasePlugin, IHasWebPages, IHasPluginConfiguration
     {
         public static Plugin? Instance { get; private set; }
+
+        private PluginConfiguration _configuration = new PluginConfiguration();
+
+        public Plugin()
+        {
+            Instance = this;
+            SetId(new Guid("8d7a3a6d-1b23-4c77-9b8a-a12d3f4e9e7d"));
+            SetAttributes(string.Empty, string.Empty, new Version(1, 0, 0, 0));
+        }
 
         public override string Name => "AniList + TMDb Fusion";
         public override string Description => "Usa el título romaji de AniList y los metadatos de TMDb en español.";
 
-        public Plugin(IApplicationPaths appPaths, IXmlSerializer xmlSerializer)
-            : base(appPaths, xmlSerializer)
+        public BasePluginConfiguration Configuration => _configuration;
+        public Type ConfigurationType => typeof(PluginConfiguration);
+
+        public void UpdateConfiguration(BasePluginConfiguration config)
         {
-            Instance = this;
+            _configuration = (PluginConfiguration)config;
         }
 
         public IEnumerable<PluginPageInfo> GetPages()
@@ -26,7 +38,7 @@ namespace Jellyfin.Plugin.AnilistTMDbFusion
                 new PluginPageInfo
                 {
                     Name = "AnilistTMDbFusionConfig",
-                    EmbeddedResourcePath = GetType().Namespace + ".Configuration.PluginConfigurationPage.html"
+                    EmbeddedResourcePath = "Jellyfin.Plugin.AnilistTMDbFusion.Configuration.PluginConfigurationPage.html"
                 }
             };
         }

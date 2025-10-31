@@ -1,54 +1,52 @@
+using System;
+using System.Collections.Generic;
+using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
+using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Providers;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 using Jellyfin.Plugin.AnilistTMDbFusion.Configuration;
 
 namespace Jellyfin.Plugin.AnilistTMDbFusion.Providers
 {
-    public class AniListTMDbProvider : IRemoteMetadataProvider<Series, SeriesInfo>
+    public class AniListTMDbProvider : IRemoteMetadataProvider<Series, ItemLookupInfo>, IRemoteSearchProvider<ItemLookupInfo>
     {
-        public string Name => "AniList + TMDb Fusion";
+        private readonly PluginConfiguration _config;
 
-        public async Task<MetadataResult<Series>> GetMetadata(SeriesInfo info, CancellationToken cancellationToken)
+        public AniListTMDbProvider(PluginConfiguration config)
         {
-            var result = new MetadataResult<Series> { HasMetadata = false };
-            var plugin = Plugin.Instance!;
-            var apiKey = plugin.Configuration?.TmdbApiKey;
+            _config = config;
+        }
 
-            if (string.IsNullOrEmpty(apiKey))
-                return result;
-
-            // Obtener metadatos de TMDb
-            var tmdb = await TMDbClient.SearchAsync(apiKey, info.Name);
-            if (tmdb == null) return result;
-
-            var series = new Series
+        // Devuelve los metadatos de la serie
+        public async Task<MetadataResult<Series>> GetMetadata(ItemLookupInfo info, CancellationToken cancellationToken)
+        {
+            var result = new MetadataResult<Series>
             {
-                Overview = tmdb.Value.TryGetProperty("overview", out var ov) ? ov.GetString() : null,
+                Item = new Series
+                {
+                    Name = "Título Romaji (placeholder)"
+                },
+                HasMetadata = true
             };
 
-            if (tmdb.Value.TryGetProperty("first_air_date", out var dateProp) && DateTime.TryParse(dateProp.GetString(), out var dt))
-            {
-                series.PremiereDate = dt;
-            }
+            // Aquí puedes integrar AniList y TMDb usando _config.TmdbApiKey, etc.
 
-            // Obtener título romaji de AniList
-            var romaji = await AniListClient.GetRomajiTitleAsync(info.Name);
-            if (!string.IsNullOrEmpty(romaji))
-            {
-                series.Name = romaji;
-            }
-            else if (tmdb.Value.TryGetProperty("name", out var nameProp))
-            {
-                series.Name = nameProp.GetString();
-            }
-
-            result.Item = series;
-            result.HasMetadata = true;
-            return result;
+            return await Task.FromResult(result);
         }
+
+        // Búsqueda remota de contenido
+        public Task<IEnumerable<RemoteSearchResult>> GetSearchResults(ItemLookupInfo searchInfo, CancellationToken cancellationToken)
+        {
+            return Task.FromResult<IEnumerable<RemoteSearchResult>>(new List<RemoteSearchResult>());
+        }
+        public Task<HttpResponseMessage> GetImageResponse(string url, CancellationToken cancellationToken)
+        {
+            return Task.FromResult<HttpResponseMessage>(null);
+        }
+        // Nombre del proveedor
+        public string Name => "AniList + TMDb Fusion Provider";
     }
 }

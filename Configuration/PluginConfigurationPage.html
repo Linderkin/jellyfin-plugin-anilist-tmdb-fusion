@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -11,6 +12,10 @@
             <label for="TmdbApiKey">TMDb API Key:</label>
             <input id="TmdbApiKey" type="text" />
         </div>
+        <div class="formGroup">
+            <label for="AniListApiKey">AniList API Key:</label>
+            <input id="AniListApiKey" type="text" />
+        </div>
         <button id="saveConfig" class="raised button-submit block">Guardar</button>
     </div>
 
@@ -20,11 +25,13 @@
         async function loadConfig() {
             const response = await ApiClient.getPluginConfiguration(pluginId);
             document.querySelector('#TmdbApiKey').value = response.TmdbApiKey || "";
+            document.querySelector('#AniListApiKey').value = response.AniListApiKey || "";
         }
 
         document.querySelector('#saveConfig').addEventListener('click', async () => {
             const config = await ApiClient.getPluginConfiguration(pluginId);
             config.TmdbApiKey = document.querySelector('#TmdbApiKey').value;
+            config.AniListApiKey = document.querySelector('#AniListApiKey').value;
             await ApiClient.updatePluginConfiguration(pluginId, config);
             Dashboard.processPluginConfigurationUpdateResult();
         });
