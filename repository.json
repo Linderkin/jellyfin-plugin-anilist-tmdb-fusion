@@ -8,7 +8,6 @@
     "category": "Metadata",
     "owner": "Linderkin",
     "sourceUrl": "https://github.com/Linderkin/jellyfin-plugin-anilist-tmdb-fusion",
-    "archive": "https://github.com/Linderkin/jellyfin-plugin-anilist-tmdb-fusion/releases/download/v1.0.0/Jellyfin.Plugin.AnilistTMDbFusion.zip",
-    "imageUrl": "https://raw.githubusercontent.com/Linderkin/jellyfin-plugin-anilist-tmdb-fusion/master/icon.png"
+    "archive": "https://github.com/Linderkin/jellyfin-plugin-anilist-tmdb-fusion/releases/download/v1.0.0/Jellyfin.Plugin.AnilistTMDbFusion.zip"
   }
 ]
