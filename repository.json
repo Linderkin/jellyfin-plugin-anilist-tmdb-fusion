@@ -13,7 +13,7 @@
         "changelog": "Versión inicial del plugin AniFusion. Combina datos de AniList y TMDb para títulos de anime.",
         "targetAbi": "10.10.0.0",
         "sourceUrl": "https://github.com/Linderkin/jellyfin-plugin-anilist-tmdb-fusion/releases/download/v1.0.0/Jellyfin.Plugin.AnilistTMDbFusion.zip",
-        "checksum": "73594190F88510BE8FFD32AD99532891",
+        "checksum": "595DF762DD214F141F1A0B9B90CC0C43",
         "timestamp": "2025-10-31T00:00:00Z"
       }
     ]
