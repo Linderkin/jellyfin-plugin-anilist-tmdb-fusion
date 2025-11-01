@@ -6,7 +6,7 @@
     "description": "Usa el título romaji de AniList y los metadatos de TMDb en español.",
     "owner": "Linderkin",
     "category": "Metadata",
-    "imageUrl": "https://raw.githubusercontent.com/Linderkin/jellyfin-plugin-anilist-tmdb-fusion/main/images/icon.png",
+    "imageUrl": "https://raw.githubusercontent.com/Linderkin/jellyfin-plugin-anilist-tmdb-fusion/master/icon.png",
     "versions": [
       {
         "version": "1.0.1",
