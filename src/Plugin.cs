@@ -17,11 +17,12 @@ namespace Jellyfin.Plugin.AniFusion
         {
             Instance = this;
             SetId(new Guid("8d7a3a6d-1b23-4c77-9b8a-a12d3f4e9e7d"));
-            SetAttributes("AniFusion", "Usa el título romaji de AniList y los metadatos de TMDb.", new Version(1, 0, 0, 0));
+            SetAttributes("AniFusion", "Usa el título romaji de AniList y los metadatos de TMDb.", new Version(1, 0, 1, 0));
         }
 
         public override string Name => "AniFusion";
 
+        // IHasPluginConfiguration
         public BasePluginConfiguration Configuration => _configuration;
 
         public Type ConfigurationType => typeof(PluginConfiguration);
@@ -31,6 +32,7 @@ namespace Jellyfin.Plugin.AniFusion
             _configuration = (PluginConfiguration)config;
         }
 
+        // IHasWebPages
         public IEnumerable<PluginPageInfo> GetPages()
         {
             return new[]
@@ -38,7 +40,8 @@ namespace Jellyfin.Plugin.AniFusion
                 new PluginPageInfo
                 {
                     Name = "AniFusion",
-                    EmbeddedResourcePath = "Jellyfin.Plugin.AniFusion.Configuration.PluginConfigurationPage.html"
+                    EmbeddedResourcePath = "Jellyfin.Plugin.AniFusion.Web.PluginConfigurationPage.html",
+                    EnableInMainMenu = true
                 }
             };
         }

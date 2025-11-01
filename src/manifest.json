@@ -9,5 +9,6 @@
   "ConfigurationType": "Jellyfin.Plugin.AniFusion.Configuration.PluginConfiguration",
   "category": "Metadata",
   "owner": "Linderkin",
+  "imageUrl": "images/icon.png",
   "autoUpdate": true
 }

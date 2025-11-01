@@ -16,7 +16,9 @@ namespace Jellyfin.Plugin.AniFusion.Providers
     public class AniFusionProvider : IRemoteMetadataProvider<Series, ItemLookupInfo>, IRemoteSearchProvider<ItemLookupInfo>
     {
         private readonly PluginConfiguration _config;
-        private static readonly SemaphoreSlim Throttle = new(1, 1); // Evita saturar APIs
+
+        private static readonly SemaphoreSlim AniListSemaphore = new SemaphoreSlim(1, 1);
+        private static readonly SemaphoreSlim TMDbSemaphore = new SemaphoreSlim(1, 1);
 
         public AniFusionProvider()
         {
@@ -33,56 +35,42 @@ namespace Jellyfin.Plugin.AniFusion.Providers
                 HasMetadata = false
             };
 
-            if (string.IsNullOrEmpty(info.Name))
-                return result;
-
-            // Throttle básico
-            await Throttle.WaitAsync(cancellationToken);
-            try
+            // Obtener título romaji de AniList
+            var romajiTitle = await GetRomajiTitleFromAniList(info.Name ?? "", cancellationToken);
+            if (!string.IsNullOrEmpty(romajiTitle))
             {
-                // Título romaji desde AniList
-                var romajiTitle = await GetRomajiTitleFromAniList(info.Name, cancellationToken);
-                if (!string.IsNullOrEmpty(romajiTitle))
-                {
-                    result.Item.Name = romajiTitle;
-                }
-
-                // Metadatos desde TMDb
-                var tmdbData = await GetTMDbDetails(info.Name, cancellationToken);
-                if (tmdbData != null)
-                {
-                    result.Item.Overview = tmdbData.overview;
-
-                    if (_config.IncludeGenres && tmdbData.genres != null)
-                    {
-                        result.Item.Genres = tmdbData.genres
-                            .Select(g => g.name)
-                            .Where(n => !string.IsNullOrEmpty(n))
-                            .ToArray();
-                    }
-
-                    if (DateTime.TryParse(tmdbData.first_air_date, out var date))
-                    {
-                        result.Item.PremiereDate = date;
-                        result.Item.ProductionYear = date.Year;
-                    }
-
-                    if (!string.IsNullOrEmpty(tmdbData.poster_path) && _config.ShowImages)
-                    {
-                        result.RemoteImages = new List<(string Url, ImageType Type)>
-                        {
-                            ($"https://image.tmdb.org/t/p/w500{tmdbData.poster_path}", ImageType.Primary)
-                        };
-                    }
-
-                    result.HasMetadata = true;
-                }
+                result.Item.Name = romajiTitle;
             }
-            finally
+
+            // Obtener metadatos de TMDb
+            var tmdbData = await GetTMDbDetails(info.Name ?? "", cancellationToken);
+            if (tmdbData != null)
             {
-                // Espera 500ms para la siguiente petición si hay muchas
-                await Task.Delay(500, cancellationToken);
-                Throttle.Release();
+                result.Item.Overview = tmdbData.overview;
+
+                if (_config.IncludeGenres && tmdbData.genres != null)
+                {
+                    result.Item.Genres = tmdbData.genres
+                        .Select(g => g.name)
+                        .Where(n => !string.IsNullOrEmpty(n))
+                        .ToArray();
+                }
+
+                if (DateTime.TryParse(tmdbData.first_air_date, out var date))
+                {
+                    result.Item.PremiereDate = date;
+                    result.Item.ProductionYear = date.Year;
+                }
+
+                if (!string.IsNullOrEmpty(tmdbData.poster_path) && _config.ShowImages)
+                {
+                    result.RemoteImages = new List<(string Url, ImageType Type)>
+                    {
+                        ($"https://image.tmdb.org/t/p/w500{tmdbData.poster_path}", ImageType.Primary)
+                    };
+                }
+
+                result.HasMetadata = true;
             }
 
             return result;
@@ -90,16 +78,19 @@ namespace Jellyfin.Plugin.AniFusion.Providers
 
         public Task<IEnumerable<RemoteSearchResult>> GetSearchResults(ItemLookupInfo searchInfo, CancellationToken cancellationToken)
         {
+            // Por ahora devolvemos vacío, Jellyfin lo usa solo si hacemos búsqueda
             return Task.FromResult<IEnumerable<RemoteSearchResult>>(new List<RemoteSearchResult>());
         }
 
         public Task<HttpResponseMessage> GetImageResponse(string url, CancellationToken cancellationToken)
         {
+            // No usamos
             return Task.FromResult<HttpResponseMessage>(default!);
         }
 
         private async Task<string?> GetRomajiTitleFromAniList(string searchTitle, CancellationToken cancellationToken)
         {
+            await AniListSemaphore.WaitAsync(cancellationToken);
             try
             {
                 var query = @"
@@ -108,58 +99,110 @@ namespace Jellyfin.Plugin.AniFusion.Providers
                             title { romaji }
                         }
                     }";
+
                 var variables = new { search = searchTitle };
                 var payload = new { query, variables };
 
                 using var client = new HttpClient();
-                var response = await client.PostAsJsonAsync("https://graphql.anilist.co", payload, cancellationToken);
-                if (!response.IsSuccessStatusCode) return null;
+                int retries = 3;
 
-                var json = await response.Content.ReadFromJsonAsync<AniListResponse>(cancellationToken);
-                return json?.data?.Media?.title?.romaji;
-            }
-            catch
-            {
+                while (retries > 0)
+                {
+                    var response = await client.PostAsJsonAsync("https://graphql.anilist.co", payload, cancellationToken);
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var json = await response.Content.ReadFromJsonAsync<AniListResponse>(cancellationToken);
+                        return json?.data?.Media?.title?.romaji;
+                    }
+
+                    if ((int)response.StatusCode == 429)
+                        await Task.Delay(1000, cancellationToken);
+
+                    retries--;
+                }
+
                 return null;
+            }
+            finally
+            {
+                AniListSemaphore.Release();
             }
         }
 
         private async Task<TMDbDetails?> GetTMDbDetails(string searchTitle, CancellationToken cancellationToken)
         {
+            await TMDbSemaphore.WaitAsync(cancellationToken);
             try
             {
                 var apiKey = _config.TmdbApiKey;
-                if (string.IsNullOrEmpty(apiKey)) return null;
-
                 var language = _config.Language ?? "es-ES";
+
                 using var client = new HttpClient();
+                int retries = 3;
 
-                var searchUrl = $"https://api.themoviedb.org/3/search/tv?api_key={apiKey}&query={Uri.EscapeDataString(searchTitle)}&language={language}";
-                var searchResponse = await client.GetAsync(searchUrl, cancellationToken);
-                if (!searchResponse.IsSuccessStatusCode) return null;
+                while (retries > 0)
+                {
+                    var searchUrl = $"https://api.themoviedb.org/3/search/tv?api_key={apiKey}&query={Uri.EscapeDataString(searchTitle)}&language={language}";
+                    var searchResponse = await client.GetAsync(searchUrl, cancellationToken);
 
-                var searchJson = await searchResponse.Content.ReadFromJsonAsync<TMDbSearchResponse>(cancellationToken);
-                var firstResult = searchJson?.results?.FirstOrDefault();
-                if (firstResult == null) return null;
+                    if (searchResponse.IsSuccessStatusCode)
+                    {
+                        var searchJson = await searchResponse.Content.ReadFromJsonAsync<TMDbSearchResponse>(cancellationToken);
+                        var firstResult = searchJson?.results?.FirstOrDefault();
+                        if (firstResult == null) return null;
 
-                var detailsUrl = $"https://api.themoviedb.org/3/tv/{firstResult.id}?api_key={apiKey}&language={language}";
-                var detailsResponse = await client.GetAsync(detailsUrl, cancellationToken);
-                if (!detailsResponse.IsSuccessStatusCode) return null;
+                        var detailsUrl = $"https://api.themoviedb.org/3/tv/{firstResult.id}?api_key={apiKey}&language={language}";
+                        var detailsResponse = await client.GetAsync(detailsUrl, cancellationToken);
 
-                return await detailsResponse.Content.ReadFromJsonAsync<TMDbDetails>(cancellationToken);
-            }
-            catch
-            {
+                        if (detailsResponse.IsSuccessStatusCode)
+                            return await detailsResponse.Content.ReadFromJsonAsync<TMDbDetails>(cancellationToken);
+                    }
+
+                    if ((int)searchResponse.StatusCode == 429)
+                        await Task.Delay(1000, cancellationToken);
+
+                    retries--;
+                }
+
                 return null;
+            }
+            finally
+            {
+                TMDbSemaphore.Release();
             }
         }
 
-        private class AniListResponse { public AniListData? data { get; set; } }
-        private class AniListData { public AniListMedia? Media { get; set; } }
-        private class AniListMedia { public AniListTitle? title { get; set; } }
-        private class AniListTitle { public string? romaji { get; set; } }
-        private class TMDbSearchResponse { public List<TMDbSearchResult>? results { get; set; } }
-        private class TMDbSearchResult { public int id { get; set; } }
+        // Clases internas para deserialización
+        private class AniListResponse
+        {
+            public AniListData? data { get; set; }
+        }
+
+        private class AniListData
+        {
+            public AniListMedia? Media { get; set; }
+        }
+
+        private class AniListMedia
+        {
+            public AniListTitle? title { get; set; }
+        }
+
+        private class AniListTitle
+        {
+            public string? romaji { get; set; }
+        }
+
+        private class TMDbSearchResponse
+        {
+            public List<TMDbSearchResult>? results { get; set; }
+        }
+
+        private class TMDbSearchResult
+        {
+            public int id { get; set; }
+        }
+
         private class TMDbDetails
         {
             public string? overview { get; set; }
@@ -167,6 +210,10 @@ namespace Jellyfin.Plugin.AniFusion.Providers
             public string? poster_path { get; set; }
             public List<TMDbGenre>? genres { get; set; }
         }
-        private class TMDbGenre { public string? name { get; set; } }
+
+        private class TMDbGenre
+        {
+            public string? name { get; set; }
+        }
     }
 }

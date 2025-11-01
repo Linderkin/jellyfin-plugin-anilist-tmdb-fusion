@@ -14,6 +14,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Configuration\PluginConfigurationPage.html" />
+    <EmbeddedResource Include="Web\PluginConfigurationPage.html">
+      <LogicalName>Jellyfin.Plugin.AniFusion.Web.PluginConfigurationPage.html</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="images\icon.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 </Project>
