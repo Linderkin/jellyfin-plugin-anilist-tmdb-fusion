@@ -17,27 +17,26 @@ namespace Jellyfin.Plugin.AnilistTMDbFusion
         {
             Instance = this;
             SetId(new Guid("8d7a3a6d-1b23-4c77-9b8a-a12d3f4e9e7d"));
-            SetAttributes(string.Empty, string.Empty, new Version(1, 0, 0, 0));
+            SetAttributes("AniFusion", "Usa el título romaji de AniList y los metadatos de TMDb en español.", new Version(1, 0, 0, 0));
         }
 
-        public override string Name => "AniList + TMDb Fusion";
-        public override string Description => "Usa el título romaji de AniList y los metadatos de TMDb en español.";
+        public override string Name => "AniFusion";
 
         public BasePluginConfiguration Configuration => _configuration;
+
         public Type ConfigurationType => typeof(PluginConfiguration);
 
         public void UpdateConfiguration(BasePluginConfiguration config)
         {
             _configuration = (PluginConfiguration)config;
         }
-
         public IEnumerable<PluginPageInfo> GetPages()
         {
             return new[]
             {
                 new PluginPageInfo
                 {
-                    Name = "AnilistTMDbFusionConfig",
+                    Name = "AniFusion",
                     EmbeddedResourcePath = "Jellyfin.Plugin.AnilistTMDbFusion.Configuration.PluginConfigurationPage.html"
                 }
             };
