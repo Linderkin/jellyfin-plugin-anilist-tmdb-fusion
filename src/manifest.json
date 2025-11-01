@@ -6,6 +6,7 @@
   "framework": "net8.0",
   "description": "Usa el título romaji de AniList y los metadatos de TMDb en español.",
   "overview": "Fusión de metadatos entre AniList y TMDb para Jellyfin.",
+  "ConfigurationType": "Jellyfin.Plugin.AniFusion.Configuration.PluginConfiguration",
   "category": "Metadata",
   "owner": "Linderkin",
   "autoUpdate": true

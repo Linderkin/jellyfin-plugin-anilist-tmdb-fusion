@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using MediaBrowser.Controller.Plugins;
 using MediaBrowser.Model.Plugins;
 using MediaBrowser.Common.Plugins;
-using Jellyfin.Plugin.AnilistTMDbFusion.Configuration;
+using Jellyfin.Plugin.AniFusion.Configuration;
 
-namespace Jellyfin.Plugin.AnilistTMDbFusion
+namespace Jellyfin.Plugin.AniFusion
 {
     public class Plugin : BasePlugin, IHasWebPages, IHasPluginConfiguration
     {
@@ -17,7 +17,7 @@ namespace Jellyfin.Plugin.AnilistTMDbFusion
         {
             Instance = this;
             SetId(new Guid("8d7a3a6d-1b23-4c77-9b8a-a12d3f4e9e7d"));
-            SetAttributes("AniFusion", "Usa el título romaji de AniList y los metadatos de TMDb en español.", new Version(1, 0, 0, 0));
+            SetAttributes("AniFusion", "Usa el título romaji de AniList y los metadatos de TMDb.", new Version(1, 0, 0, 0));
         }
 
         public override string Name => "AniFusion";
@@ -30,6 +30,7 @@ namespace Jellyfin.Plugin.AnilistTMDbFusion
         {
             _configuration = (PluginConfiguration)config;
         }
+
         public IEnumerable<PluginPageInfo> GetPages()
         {
             return new[]
@@ -37,7 +38,7 @@ namespace Jellyfin.Plugin.AnilistTMDbFusion
                 new PluginPageInfo
                 {
                     Name = "AniFusion",
-                    EmbeddedResourcePath = "Jellyfin.Plugin.AnilistTMDbFusion.Configuration.PluginConfigurationPage.html"
+                    EmbeddedResourcePath = "Jellyfin.Plugin.AniFusion.Configuration.PluginConfigurationPage.html"
                 }
             };
         }
